@@ -1,4 +1,4 @@
-# 基于默认的 docker-compose.yml，
+# 基于默认的 docker-compose.yml，可定期更新
 # https://raw.githubusercontent.com/wg-easy/wg-easy/master/docker-compose.yml
 
 volumes:
