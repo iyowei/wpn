@@ -12,5 +12,5 @@
     "TortoiseGit"
   ],
 
-  "custom": []
+  "custom": ["*.zip"]
 }

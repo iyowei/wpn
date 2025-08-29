@@ -3,7 +3,7 @@
 
 .PHONY: help install install-docker install-wireguard install-cron \
 	start-wireguard stop-wireguard status logs clean \
-	backup restore update test security-setup
+	backup restore update test security-setup pack
 
 # 默认目标
 help:
@@ -28,7 +28,9 @@ help:
 	@echo "  test               - 运行系统测试"
 	@echo "  clean              - 清理临时文件和日志"
 	@echo ""
-	@echo "注意: 大部分命令需要 root 权限"
+	@echo "  pack               - 打包项目为 zip 文件"
+	@echo ""
+	@echo "注意: 大部分命令需要 root 权限 (pack 命令除外)"
 
 # 检查 root 权限
 check-root:
@@ -240,3 +242,27 @@ clean: check-root
 	apt-get autoremove -y
 	apt-get autoclean
 	@echo "清理完成"
+
+# 打包项目
+pack:
+	@echo "打包项目为 zip 文件..."
+	@PROJECT_NAME="wpn-$$(date +%Y%m%d-%H%M%S)"; \
+	ZIP_FILE="$$PROJECT_NAME.zip"; \
+	echo "创建压缩包: $$ZIP_FILE"; \
+	zip -r "$$ZIP_FILE" \
+		README.md \
+		CLAUDE.md \
+		SERVER.md \
+		PEER.md \
+		Makefile \
+		scripts/ \
+		etc/ \
+		-x "*.git*" "*.DS_Store" "*.log" "*~" "*.tmp" \
+		2>/dev/null || { \
+			echo "错误: zip 命令未找到，请安装 zip 工具"; \
+			echo "Ubuntu/Debian: sudo apt install zip"; \
+			echo "macOS: brew install zip"; \
+			exit 1; \
+		}; \
+	echo "打包完成: $$ZIP_FILE"; \
+	ls -lh "$$ZIP_FILE"
