@@ -19,18 +19,19 @@ fi
 create_rotation_log() {
     local task_name="$1"
     local log_dir="${2:-/var/log}"
-    
+
     if [ -z "$task_name" ]; then
         echo "错误：未提供任务名称"
         return 1
     fi
-    
+
     # 获取精确的执行时间 (年月日-时分秒)
-    local timestamp=$(date '+%Y%m%d-%H%M%S')
-    
+    local timestamp
+    timestamp=$(date '+%Y%m%d-%H%M%S')
+
     # 构建新的日志文件路径
     local new_log_file="$log_dir/${task_name}-${timestamp}.log"
-    
+
     # 确保日志目录存在
     if [ ! -d "$log_dir" ]; then
         mkdir -p "$log_dir" || {
@@ -38,13 +39,13 @@ create_rotation_log() {
             return 1
         }
     fi
-    
+
     # 创建新日志文件
     touch "$new_log_file" || {
         echo "错误：无法创建日志文件 $new_log_file"
         return 1
     }
-    
+
     # 输出新日志文件路径，供调用脚本使用
     echo "$new_log_file"
     return 0
@@ -58,23 +59,24 @@ cleanup_old_logs() {
     local task_name="$1"
     local keep_days="${2:-30}"
     local log_dir="${3:-/var/log}"
-    
+
     if [ -z "$task_name" ]; then
         echo "错误：未提供任务名称"
         return 1
     fi
-    
+
     # 查找并删除超过指定天数的日志文件
     if [ -d "$log_dir" ]; then
-        find "$log_dir" -name "${task_name}-*.log" -type f -mtime +${keep_days} -delete 2>/dev/null
-        
+        find "$log_dir" -name "${task_name}-*.log" -type f -mtime +"${keep_days}" -delete 2>/dev/null
+
         # 记录清理操作
-        local cleanup_count=$(find "$log_dir" -name "${task_name}-*.log" -type f -mtime +${keep_days} 2>/dev/null | wc -l)
+        local cleanup_count
+        cleanup_count=$(find "$log_dir" -name "${task_name}-*.log" -type f -mtime +"${keep_days}" 2>/dev/null | wc -l)
         if [ "$cleanup_count" -gt 0 ]; then
             echo "$(date '+%Y-%m-%d %H:%M:%S') - 已清理 $cleanup_count 个超过 ${keep_days} 天的 ${task_name} 日志文件"
         fi
     fi
-    
+
     return 0
 }
 
@@ -84,14 +86,13 @@ cleanup_old_logs() {
 log_message() {
     local log_file="$1"
     local message="$2"
-    
+
     if [ -z "$log_file" ] || [ -z "$message" ]; then
         echo "错误：缺少日志文件路径或日志内容"
         return 1
     fi
-    
+
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $message" >> "$log_file"
-    return $?
 }
 
 # 任务开始记录函数
@@ -100,19 +101,20 @@ log_message() {
 task_start() {
     local task_name="$1"
     local log_file="$2"
-    
+
     if [ -z "$task_name" ] || [ -z "$log_file" ]; then
         echo "错误：缺少任务名称或日志文件路径"
         return 1
     fi
-    
+
     log_message "$log_file" "开始执行 $task_name 任务"
-    
+
     # 记录任务开始时间到全局变量（用于计算执行时长）
-    export TASK_START_TIME=$(date +%s)
+    export TASK_START_TIME
+    TASK_START_TIME=$(date +%s)
     export CURRENT_TASK_NAME="$task_name"
     export CURRENT_LOG_FILE="$log_file"
-    
+
     return 0
 }
 
@@ -124,47 +126,49 @@ task_success() {
     local task_name="$1"
     local log_file="$2"
     local success_message="${3:-任务执行成功}"
-    
+
     if [ -z "$task_name" ] || [ -z "$log_file" ]; then
         echo "错误：缺少任务名称或日志文件路径"
         return 1
     fi
-    
+
     # 计算执行时长
     local duration=""
     if [ -n "$TASK_START_TIME" ]; then
-        local end_time=$(date +%s)
+        local end_time
+        end_time=$(date +%s)
         local elapsed=$((end_time - TASK_START_TIME))
         duration="执行时长：${elapsed} 秒"
     fi
-    
+
     log_message "$log_file" "$success_message"
     log_message "$log_file" "任务执行完成"
-    
+
     if [ -n "$duration" ]; then
         log_message "$log_file" "$duration"
     fi
-    
+
     # 发送成功通知
     if [ "$NOTIFICATION_ENABLED" = "true" ]; then
         local details="$success_message"
         if [ -n "$duration" ]; then
             details="$details\n$duration"
         fi
-        
+
         # 获取最近的日志内容作为详细信息
         if [ -f "$log_file" ]; then
-            local recent_logs=$(tail -n 5 "$log_file" | head -n -1)  # 排除最后一行空行
+            local recent_logs
+            recent_logs=$(tail -n 5 "$log_file" | head -n -1)  # 排除最后一行空行
             if [ -n "$recent_logs" ]; then
                 details="$details\n\n最近日志：\n$recent_logs"
             fi
         fi
-        
+
         send_success_notification "$task_name" "$details" 2>/dev/null || {
             log_message "$log_file" "推送成功通知失败"
         }
     fi
-    
+
     return 0
 }
 
@@ -178,71 +182,73 @@ task_failure() {
     local log_file="$2"
     local error_message="$3"
     local exit_code="${4:-1}"
-    
+
     if [ -z "$task_name" ] || [ -z "$log_file" ] || [ -z "$error_message" ]; then
         echo "错误：缺少必要参数"
         return 1
     fi
-    
+
     # 计算执行时长
     local duration=""
     if [ -n "$TASK_START_TIME" ]; then
-        local end_time=$(date +%s)
+        local end_time
+        end_time=$(date +%s)
         local elapsed=$((end_time - TASK_START_TIME))
         duration="执行时长：${elapsed} 秒"
     fi
-    
+
     log_message "$log_file" "任务执行失败：$error_message"
-    
+
     if [ -n "$duration" ]; then
         log_message "$log_file" "$duration"
     fi
-    
+
     # 发送失败通知
     if [ "$NOTIFICATION_ENABLED" = "true" ]; then
         local details="$error_message"
         if [ -n "$duration" ]; then
             details="$details\n$duration"
         fi
-        
+
         # 获取最近的日志内容作为详细信息
         if [ -f "$log_file" ]; then
-            local recent_logs=$(tail -n 10 "$log_file" | head -n -1)  # 排除最后一行空行
+            local recent_logs
+            recent_logs=$(tail -n 10 "$log_file" | head -n -1)  # 排除最后一行空行
             if [ -n "$recent_logs" ]; then
                 details="$details\n\n最近日志：\n$recent_logs"
             fi
         fi
-        
+
         send_failure_notification "$task_name" "$error_message" "$details" 2>/dev/null || {
             log_message "$log_file" "推送失败通知失败"
         }
     fi
-    
+
     return "$exit_code"
 }
 
 # 如果脚本被直接执行（而非被source），提供使用示例
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
-    echo "日志轮转工具函数库"
-    echo ""
-    echo "使用方式："
-    echo "source $0"
-    echo ""
-    echo "主要函数："
-    echo "1. create_rotation_log <任务名称> [日志目录]"
-    echo "   - 创建带时间戳的新日志文件"
-    echo "   - 返回新日志文件的完整路径"
-    echo ""
-    echo "2. cleanup_old_logs <任务名称> [保留天数] [日志目录]"
-    echo "   - 清理超过指定天数的旧日志文件"
-    echo "   - 默认保留30天"
-    echo ""
-    echo "3. log_message <日志文件路径> <日志内容>"
-    echo "   - 向指定日志文件写入带时间戳的消息"
-    echo ""
-    echo "示例："
-    echo "# 创建DNS刷新任务的轮转日志"
-    echo "LOG_FILE=\$(create_rotation_log \"dns-refresh\")"
-    echo "log_message \"\$LOG_FILE\" \"开始执行DNS刷新任务\""
-    echo "cleanup_old_logs \"dns-refresh\" 7  # 保留7天"
+  echo "日志轮转工具函数库"
+  echo ""
+  echo "使用方式："
+  echo "source $0"
+  echo ""
+  echo "主要函数："
+  echo "1. create_rotation_log <任务名称> [日志目录]"
+  echo "   - 创建带时间戳的新日志文件"
+  echo "   - 返回新日志文件的完整路径"
+  echo ""
+  echo "2. cleanup_old_logs <任务名称> [保留天数] [日志目录]"
+  echo "   - 清理超过指定天数的旧日志文件"
+  echo "   - 默认保留30天"
+  echo ""
+  echo "3. log_message <日志文件路径> <日志内容>"
+  echo "   - 向指定日志文件写入带时间戳的消息"
+  echo ""
+  echo "示例："
+  echo "# 创建DNS刷新任务的轮转日志"
+  echo "LOG_FILE=\$(create_rotation_log \"dns-refresh\")"
+  echo "log_message \"\$LOG_FILE\" \"开始执行DNS刷新任务\""
+  echo "cleanup_old_logs \"dns-refresh\" 7  # 保留7天"
 fi
