@@ -10,7 +10,7 @@
 
 Makefile 正确使用 Tab 缩进。
 
-所有 Shell 脚本正确使用空格缩进。
+所有 Shell 脚本正确使用 2 个空格缩进。
 
 仅需支持在 Ubuntu 24 LTS 上能够高效运行即可，无需考虑别的系统平台。
 
@@ -62,3 +62,5 @@ eval "$data"
 ret=$(sc_send '主人服务器宕机了 via shell' $'第一行\n\n第二行' "$SENDKEY")
 echo "$ret"
 ```
+
+所有 Shell 脚本均要使用 shellcheck 检查且通过。
