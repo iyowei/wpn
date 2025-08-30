@@ -257,7 +257,7 @@ pack:
 		Makefile \
 		scripts/ \
 		etc/ \
-		-x "*.git*" "*.DS_Store" "*.log" "*~" "*.tmp" \
+		-x "*.git*" "*.DS_Store" "*.log" "*~" "*.tmp" "*.zip" "*.tar.gz" "*.tar.bz2" "*.tar.xz" "*.rar" "*.7z" \
 		2>/dev/null || { \
 			echo "错误: zip 命令未找到，请安装 zip 工具"; \
 			echo "Ubuntu/Debian: sudo apt install zip"; \
