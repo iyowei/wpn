@@ -248,21 +248,46 @@ pack:
 	@echo "打包项目为 zip 文件..."
 	@PROJECT_NAME="wpn-$$(date +%Y%m%d-%H%M%S)"; \
 	ZIP_FILE="$$PROJECT_NAME.zip"; \
+	TEMP_DIR="/tmp/$$PROJECT_NAME-pack"; \
+	WPN_DIR="$$TEMP_DIR/$$PROJECT_NAME"; \
 	echo "创建压缩包: $$ZIP_FILE"; \
-	zip -r "$$ZIP_FILE" \
-		README.md \
-		CLAUDE.md \
-		SERVER.md \
-		PEER.md \
-		Makefile \
-		scripts/ \
-		etc/ \
+	echo "创建临时目录: $$TEMP_DIR"; \
+	mkdir -p "$$WPN_DIR" || { echo "错误: 无法创建临时目录"; exit 1; }; \
+	echo "复制项目文件到临时目录..."; \
+	cp README.md "$$WPN_DIR/" && \
+	cp CLAUDE.md "$$WPN_DIR/" && \
+	cp SERVER.md "$$WPN_DIR/" && \
+	cp PEER.md "$$WPN_DIR/" && \
+	cp Makefile "$$WPN_DIR/" && \
+	cp -r scripts "$$WPN_DIR/" && \
+	cp -r etc "$$WPN_DIR/" || { \
+		echo "错误: 复制项目文件失败"; \
+		rm -rf "$$TEMP_DIR"; \
+		exit 1; \
+	}; \
+	echo "复制 wpn-zip-handler.sh 到临时目录..."; \
+	cp wpn-zip-handler.sh "$$TEMP_DIR/" && chmod +x "$$TEMP_DIR/wpn-zip-handler.sh" || { \
+		echo "错误: 复制或设置 wpn-zip-handler.sh 权限失败"; \
+		rm -rf "$$TEMP_DIR"; \
+		exit 1; \
+	}; \
+	echo "创建压缩包..."; \
+	echo "检查临时目录结构:"; \
+	find "$$TEMP_DIR" -type f | head -10; \
+	cd "$$TEMP_DIR" && zip -r "$(PWD)/$$ZIP_FILE" . \
 		-x "*.git*" "*.DS_Store" "*.log" "*~" "*.tmp" "*.zip" "*.tar.gz" "*.tar.bz2" "*.tar.xz" "*.rar" "*.7z" \
 		2>/dev/null || { \
-			echo "错误: zip 命令未找到，请安装 zip 工具"; \
+			echo "错误: zip 命令失败，请安装 zip 工具"; \
 			echo "Ubuntu/Debian: sudo apt install zip"; \
 			echo "macOS: brew install zip"; \
+			cd "$(PWD)"; \
+			rm -rf "$$TEMP_DIR"; \
 			exit 1; \
 		}; \
+	cd "$(PWD)"; \
+	rm -rf "$$TEMP_DIR"; \
 	echo "打包完成: $$ZIP_FILE"; \
+	echo "压缩包内容结构:"; \
+	unzip -l "$$ZIP_FILE" | head -20; \
+	echo "..."; \
 	ls -lh "$$ZIP_FILE"
