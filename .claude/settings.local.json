@@ -5,7 +5,11 @@
       "Bash(bash:*)",
       "Bash(cat:*)",
       "Bash(grep:*)",
-      "Bash(shellcheck:*)"
+      "Bash(shellcheck:*)",
+      "Bash(mv:*)",
+      "Bash(systemctl list-units:*)",
+      "WebFetch(domain:wiki.ubuntu.com)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
