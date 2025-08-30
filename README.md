@@ -16,7 +16,7 @@ Wireguard 组网。
 
 参见 PEER.md 。
 
-## 快速开始
+## 快速部署
 
 准备需要放到 WireGuard 网管服务器上的文件，
 ```shell
