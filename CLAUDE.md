@@ -66,6 +66,20 @@ ret=$(sc_send '主人服务器宕机了 via shell' $'第一行\n\n第二行' "$S
 echo "$ret"
 ```
 
+@scripts/install-cron.sh 脚本每次执行时，要把老的定时任务移除，每次当前脚本设置定时任务，还是要持久存储一下，方便下一次设置最新定时任务时把之前的移除掉。
+
+`crontab -l` 参考格式，
+```
+# WPN-CRON-TASK: DNS 刷新任务 (每日 06:00)
+0 6 * * * TZ='Asia/Shanghai' /root/wpn-20250830-190657/scripts/dns-refresh.sh
+
+# WPN-CRON-TASK: 服务器重启任务 (每日 06:05)
+5 6 * * * TZ='Asia/Shanghai' /root/wpn-20250830-190657/scripts/server-reboot.sh
+
+# WPN-CRON-TASK: WireGuard 健康检查任务 (每小时的 9-59 分钟)
+9-59 * * * * TZ='Asia/Shanghai' /root/wpn-20250830-190657/scripts/wireguard-healthcheck.sh
+```
+
 所有 Shell 脚本均要使用 shellcheck 检查且通过。
 
 # 项目压缩包
