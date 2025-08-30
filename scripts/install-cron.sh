@@ -28,7 +28,7 @@
 # 5 6 * * * TZ='Asia/Shanghai' /home/ubuntu/wpn/scripts/server-reboot.sh
 #
 # # WPN-CRON-TASK: WireGuard 健康检查任务
-# 1 * * * * TZ='Asia/Shanghai' /home/ubuntu/wpn/scripts/wireguard-healthcheck.sh
+# 9-59 * * * * TZ='Asia/Shanghai' /home/ubuntu/wpn/scripts/wireguard-healthcheck.sh
 #
 # # 用户其他任务（保持不变）
 # 0 8 * * 1 /home/user/weekly-report.sh
@@ -42,7 +42,7 @@
 # 时间设置：
 # - DNS 刷新：每天早上 6:00（上海时间）
 # - 服务器重启：每天早上 6:05（上海时间）
-# - 健康检查：每小时第 1 分钟（上海时间）
+# - 健康检查：除了每小时的头 8 分钟之外的时间每分钟执行（上海时间）
 
 if [ "$EUID" -ne 0 ]; then
   echo "错误：此脚本需要 root 权限运行"
@@ -174,7 +174,7 @@ bash -n "$HEALTHCHECK_SCRIPT" || {
 echo "添加定时任务："
 echo "  - 每天上海时间早上 6:00 执行 DNS 刷新"
 echo "  - 每天上海时间早上 6:05 执行服务器重启"
-echo "  - 每小时的第 1 分钟执行 WireGuard 健康检查"
+echo "  - 除了每小时的头 8 分钟之外的时间每分钟执行 WireGuard 健康检查"
 
 # 清理之前安装的定时任务
 cleanup_previous_cron_tasks
@@ -195,7 +195,7 @@ echo "已备份现有 crontab 到 $CRONTAB_BACKUP"
   echo "5 6 * * * TZ='Asia/Shanghai' $REBOOT_SCRIPT"
   echo ""
   echo "$WPN_CRON_TAG: WireGuard 健康检查任务"
-  echo "1 * * * * TZ='Asia/Shanghai' $HEALTHCHECK_SCRIPT"
+  echo "9-59 * * * * TZ='Asia/Shanghai' $HEALTHCHECK_SCRIPT"
 ) | crontab - || {
   echo "错误：无法更新 crontab，正在恢复备份..."
   crontab "$CRONTAB_BACKUP" 2>/dev/null
@@ -275,7 +275,7 @@ if crontab -l | grep -q "$DNS_SCRIPT" && crontab -l | grep -q "$REBOOT_SCRIPT" &
   echo "定时任务说明："
   echo "  - DNS 将在每天上海时间早上 6:00 自动刷新"
   echo "  - 服务器将在每天上海时间早上 6:05 自动重启"
-  echo "  - WireGuard 健康检查每小时第 1 分钟执行"
+  echo "  - WireGuard 健康检查除了每小时的头 8 分钟之外的时间每分钟执行"
   echo ""
   echo "日志文件位置（采用轮转机制）："
   echo "  - DNS 刷新日志：/var/log/dns-refresh-*.log"

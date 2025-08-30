@@ -21,13 +21,19 @@ sc_send() {
   if [ -z "$key" ]; then
     local config_file
     config_file="$(dirname "${BASH_SOURCE[0]}")/../.env"
-    if [ -f "$config_file" ]; then
-      # 读取配置文件中的 SENDKEY
-      key=$(grep '^SENDKEY=' "$config_file" | cut -d'=' -f2 | tr -d '"'"'"'')
+    
+    if [ ! -f "$config_file" ]; then
+      echo "错误：配置文件 $config_file 不存在"
+      echo "请在项目根目录创建 .env 文件，内容：SENDKEY=\"your_sendkey_here\""
+      return 1
     fi
+    
+    # 读取配置文件中的 SENDKEY
+    key=$(grep '^SENDKEY=' "$config_file" | cut -d'=' -f2 | tr -d '"'"'"'')
 
     if [ -z "$key" ]; then
-      echo "错误：未找到发送密钥，请在配置文件中设置 SENDKEY"
+      echo "错误：配置文件 $config_file 中未设置 SENDKEY"
+      echo "请在 .env 文件中添加：SENDKEY=\"your_sendkey_here\""
       return 1
     fi
   fi
@@ -175,6 +181,7 @@ check_notification_config() {
 
   if [ ! -f "$config_file" ]; then
     echo "警告：配置文件 $config_file 不存在"
+    echo "请在项目根目录创建 .env 文件，内容：SENDKEY=\"your_sendkey_here\""
     return 1
   fi
 
@@ -182,7 +189,8 @@ check_notification_config() {
   sendkey=$(grep '^SENDKEY=' "$config_file" | cut -d'=' -f2 | tr -d '"'"'"'')
 
   if [ -z "$sendkey" ]; then
-    echo "警告：配置文件中未设置 SENDKEY"
+    echo "警告：配置文件 $config_file 中未设置 SENDKEY"
+    echo "请在 .env 文件中添加：SENDKEY=\"your_sendkey_here\""
     return 1
   fi
 
