@@ -18,6 +18,25 @@ Wireguard 组网。
 
 ## 快速开始
 
-克隆项目后，运行 `make pack` 指令，然后将压缩包以及 "wpn-zip-handler.sh" 拷贝到服务器上指定位置。
+准备需要放到 WireGuard 网管服务器上的文件，
+```shell
+git clone git@github.com:iyowei/wpn.git
+cd wpn
 
-"wpn-zip-handler.sh" 脚本是用来方便处理这个压缩包的，包括解压缩、更新脚本文件为可执行文件等操作。
+make pack
+```
+
+将压缩包以及 "wpn-zip-handler.sh" 拷贝到目前 WireGuard 网关服务器上的指定磁盘位置。
+
+登录 WireGuard 网关服务器并进入压缩包所在位置，
+```shell
+chmod +x wpn-zip-handler.sh
+
+# 用来处理压缩包，包括解压缩、更新压缩包内脚本文件为可执行文件等操作
+wpn-zip-handler.sh
+```
+
+进入压缩包解压后的文件夹，
+```shell
+make install
+```
