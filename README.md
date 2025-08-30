@@ -28,12 +28,10 @@ make pack
 
 将压缩包以及 "wpn-zip-handler.sh" 拷贝到目前 WireGuard 网关服务器上的指定磁盘位置。
 
-登录 WireGuard 网关服务器并进入压缩包所在位置，
+登录 WireGuard 网关服务器并进入压缩包所在位置处理压缩包，
 ```shell
-chmod +x wpn-zip-handler.sh
-
 # 用来处理压缩包，包括解压缩、更新压缩包内脚本文件为可执行文件等操作
-wpn-zip-handler.sh
+bash ./wpn-zip-handler.sh
 ```
 
 进入压缩包解压后的文件夹，
