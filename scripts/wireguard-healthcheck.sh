@@ -48,18 +48,18 @@ add_check_result() {
   case "$status" in
     "SUCCESS")
       SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-      log_message "$LOG_FILE" "✅ $item: $message"
-      HEALTH_DETAILS="$HEALTH_DETAILS✅ $item: $message\n"
+      log_message "$LOG_FILE" "[OK] $item: $message"
+      HEALTH_DETAILS="$HEALTH_DETAILS[OK] $item: $message\n"
       ;;
     "WARNING")
       WARNING_COUNT=$((WARNING_COUNT + 1))
-      log_message "$LOG_FILE" "⚠️  $item: $message"
-      HEALTH_DETAILS="$HEALTH_DETAILS⚠️  $item: $message\n"
+      log_message "$LOG_FILE" "[WARN] $item: $message"
+      HEALTH_DETAILS="$HEALTH_DETAILS[WARN] $item: $message\n"
       ;;
     "ERROR")
       ERROR_COUNT=$((ERROR_COUNT + 1))
-      log_message "$LOG_FILE" "❌ $item: $message"
-      HEALTH_DETAILS="$HEALTH_DETAILS❌ $item: $message\n"
+      log_message "$LOG_FILE" "[ERROR] $item: $message"
+      HEALTH_DETAILS="$HEALTH_DETAILS[ERROR] $item: $message\n"
       ;;
   esac
 }
@@ -282,34 +282,63 @@ log_message "$LOG_FILE" "错误: $ERROR_COUNT"
 # 根据检查结果确定整体状态
 if [ "$ERROR_COUNT" -gt 0 ]; then
   overall_status="异常"
-  status_emoji="❌"
 elif [ "$WARNING_COUNT" -gt 0 ]; then
   overall_status="警告"
-  status_emoji="⚠️"
 else
-  overall_status="良好"
-  status_emoji="✅"
+  overall_status="正常"
 fi
 
-# 准备通知内容
-notification_summary="检查项目: $CHECK_COUNT 个\n成功: $SUCCESS_COUNT | 警告: $WARNING_COUNT | 错误: $ERROR_COUNT"
+# 准备简洁的通知内容
+notification_summary="系统状态：$overall_status
+检查项目：$CHECK_COUNT 个（成功: $SUCCESS_COUNT | 警告: $WARNING_COUNT | 错误: $ERROR_COUNT）"
 
-# 如果有问题，包含详细信息；否则只显示摘要
-if [ "$ERROR_COUNT" -gt 0 ] || [ "$WARNING_COUNT" -gt 3 ]; then
-  # 有严重问题或警告过多，发送详细信息
-  notification_details="$notification_summary\n\n检查详情:\n$HEALTH_DETAILS"
-  
-  if [ "$ERROR_COUNT" -gt 0 ]; then
-    task_failure "WireGuard 健康检查" "$LOG_FILE" "发现 $ERROR_COUNT 个错误，$WARNING_COUNT 个警告" 1
-  else
-    task_success "WireGuard 健康检查" "$LOG_FILE" "$status_emoji 系统状态：$overall_status\n$notification_details"
+# 默认推送详细日志，根据严重程度决定通知类型
+detailed_info=""
+
+# 始终包含有问题的项目详情
+if [ "$ERROR_COUNT" -gt 0 ]; then
+  error_details=$(echo -e "$HEALTH_DETAILS" | grep "\[ERROR\]")
+  if [ -n "$error_details" ]; then
+    detailed_info="${detailed_info}错误项目：
+$error_details
+
+"
   fi
-elif [ "$WARNING_COUNT" -gt 0 ]; then
-  # 只有少量警告，发送摘要
-  task_success "WireGuard 健康检查" "$LOG_FILE" "$status_emoji 系统状态：$overall_status\n$notification_summary\n\n有 $WARNING_COUNT 个项目需要关注，详情请查看日志"
+fi
+
+if [ "$WARNING_COUNT" -gt 0 ]; then
+  warning_details=$(echo -e "$HEALTH_DETAILS" | grep "\[WARN\]")
+  if [ -n "$warning_details" ]; then
+    detailed_info="${detailed_info}警告项目：
+$warning_details
+
+"
+  fi
+fi
+
+# 如果一切正常，显示部分成功项目作为确认
+if [ "$ERROR_COUNT" -eq 0 ] && [ "$WARNING_COUNT" -eq 0 ]; then
+  success_sample=$(echo -e "$HEALTH_DETAILS" | grep "\[OK\]" | head -3)
+  if [ -n "$success_sample" ]; then
+    detailed_info="主要检查项目：
+$success_sample
+"
+  fi
+fi
+
+# 构建完整的推送消息
+full_message="$notification_summary"
+if [ -n "$detailed_info" ]; then
+  full_message="$full_message
+
+$detailed_info"
+fi
+
+# 根据错误数量决定使用成功还是失败通知
+if [ "$ERROR_COUNT" -gt 0 ]; then
+  task_failure "WireGuard 健康检查" "$LOG_FILE" "发现 $ERROR_COUNT 个错误，$WARNING_COUNT 个警告" 1
 else
-  # 一切正常，发送简要通知
-  task_success "WireGuard 健康检查" "$LOG_FILE" "$status_emoji 系统状态：$overall_status\n$notification_summary"
+  task_success "WireGuard 健康检查" "$LOG_FILE" "$full_message"
 fi
 
 echo "" >> "$LOG_FILE"

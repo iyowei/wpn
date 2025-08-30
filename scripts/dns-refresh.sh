@@ -100,13 +100,36 @@ else
   log_message "$LOG_FILE" "警告：/etc/resolv.conf 文件不存在"
 fi
 
+# 收集DNS配置信息
+dns_config=""
+if [ -f /etc/resolv.conf ]; then
+  current_dns=$(grep "nameserver" /etc/resolv.conf 2>/dev/null | head -3)
+  if [ -n "$current_dns" ]; then
+    dns_config="当前 DNS 配置：
+$current_dns"
+  else
+    dns_config="当前 DNS 配置：未找到 nameserver 配置"
+  fi
+else
+  dns_config="当前 DNS 配置：/etc/resolv.conf 文件不存在"
+fi
+
 # 根据结果发送相应通知
 if [ "$DNS_FLUSH_SUCCESS" = "true" ]; then
-  task_success "DNS 刷新" "$LOG_FILE" "DNS 缓存已成功刷新，使用方法：$FLUSH_METHODS_USED"
+  success_details="DNS 缓存已成功刷新
+使用方法：$FLUSH_METHODS_USED
+
+$dns_config"
+  task_success "DNS 刷新" "$LOG_FILE" "$success_details"
   echo "" >> "$LOG_FILE"
   exit 0
 else
-  task_failure "DNS 刷新" "$LOG_FILE" "所有 DNS 刷新方法都失败了" 1
+  failure_details="所有 DNS 刷新方法都失败了
+
+尝试的方法：systemctl flush-dns, systemd-resolve, dns-clean, systemctl restart, nscd
+
+$dns_config"
+  task_failure "DNS 刷新" "$LOG_FILE" "$failure_details" 1
   echo "" >> "$LOG_FILE"
   exit 1
 fi

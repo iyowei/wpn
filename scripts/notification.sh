@@ -89,13 +89,11 @@ send_success_notification() {
     return 1
   fi
 
-  local title="✅ ${task_name} 任务执行成功"
+  local title="${task_name} - 执行成功"
   local content
-  content="任务：${task_name}\n执行时间：$(date '+%Y-%m-%d %H:%M:%S')\n状态：成功"
+  content="$(date '+%Y-%m-%d %H:%M:%S')
 
-  if [ -n "$task_details" ]; then
-    content="${content}\n\n详细信息：\n${task_details}"
-  fi
+${task_details}"
 
   sc_send "$title" "$content"
 }
@@ -118,13 +116,13 @@ send_failure_notification() {
     error_message="未知错误"
   fi
 
-  local title="❌ ${task_name} 任务执行失败"
+  local title="${task_name} - 执行失败"
   local content
-  content="任务：${task_name}\n执行时间：$(date '+%Y-%m-%d %H:%M:%S')\n状态：失败\n错误：${error_message}"
+  content="$(date '+%Y-%m-%d %H:%M:%S')
 
-  if [ -n "$task_details" ]; then
-    content="${content}\n\n详细信息：\n${task_details}"
-  fi
+错误：${error_message}
+
+${task_details}"
 
   sc_send "$title" "$content"
 }
@@ -141,16 +139,19 @@ send_server_status_notification() {
 
   case "$status_type" in
     "startup")
-      title="🚀 服务器启动通知"
-      content="服务器已启动\n时间：$(date '+%Y-%m-%d %H:%M:%S')"
+      title="服务器启动通知"
+      content="服务器已启动
+时间：$(date '+%Y-%m-%d %H:%M:%S')"
       ;;
     "shutdown")
-      title="🔌 服务器关机通知"
-      content="服务器即将关机\n时间：$(date '+%Y-%m-%d %H:%M:%S')"
+      title="服务器关机通知"
+      content="服务器即将关机
+时间：$(date '+%Y-%m-%d %H:%M:%S')"
       ;;
     "restart")
-      title="🔄 服务器重启通知"
-      content="服务器即将重启\n时间：$(date '+%Y-%m-%d %H:%M:%S')"
+      title="服务器重启通知"
+      content="服务器即将重启
+时间：$(date '+%Y-%m-%d %H:%M:%S')"
       ;;
     *)
       echo "错误：不支持的状态类型: $status_type"
@@ -159,7 +160,9 @@ send_server_status_notification() {
   esac
 
   if [ -n "$extra_info" ]; then
-    content="${content}\n\n${extra_info}"
+    content="${content}
+
+${extra_info}"
   fi
 
   sc_send "$title" "$content"

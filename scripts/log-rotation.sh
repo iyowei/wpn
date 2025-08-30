@@ -152,16 +152,9 @@ task_success() {
     if [ "$NOTIFICATION_ENABLED" = "true" ]; then
         local details="$success_message"
         if [ -n "$duration" ]; then
-            details="$details\n$duration"
-        fi
+            details="$details
 
-        # 获取最近的日志内容作为详细信息
-        if [ -f "$log_file" ]; then
-            local recent_logs
-            recent_logs=$(tail -n 5 "$log_file" | head -n -1)  # 排除最后一行空行
-            if [ -n "$recent_logs" ]; then
-                details="$details\n\n最近日志：\n$recent_logs"
-            fi
+$duration"
         fi
 
         send_success_notification "$task_name" "$details" 2>/dev/null || {
@@ -207,16 +200,9 @@ task_failure() {
     if [ "$NOTIFICATION_ENABLED" = "true" ]; then
         local details="$error_message"
         if [ -n "$duration" ]; then
-            details="$details\n$duration"
-        fi
+            details="$details
 
-        # 获取最近的日志内容作为详细信息
-        if [ -f "$log_file" ]; then
-            local recent_logs
-            recent_logs=$(tail -n 10 "$log_file" | head -n -1)  # 排除最后一行空行
-            if [ -n "$recent_logs" ]; then
-                details="$details\n\n最近日志：\n$recent_logs"
-            fi
+$duration"
         fi
 
         send_failure_notification "$task_name" "$error_message" "$details" 2>/dev/null || {

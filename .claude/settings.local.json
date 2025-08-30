@@ -11,7 +11,8 @@
       "WebFetch(domain:wiki.ubuntu.com)",
       "WebSearch",
       "Bash(make:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

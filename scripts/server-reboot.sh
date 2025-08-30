@@ -52,20 +52,15 @@ sync 2>/dev/null || {
   log_message "$LOG_FILE" "警告：sync 命令执行失败"
 }
 
-# 发送重启通知
-if [ "$NOTIFICATION_ENABLED" = "true" ]; then
-  # 收集系统信息作为通知内容
-  system_info="系统运行时间：$uptime_info"
-  if [ -n "$memory_info" ]; then
-    system_info="$system_info\n内存使用：$memory_info"
-  fi
-  if [ -n "$disk_info" ]; then
-    system_info="$system_info\n磁盘使用：$disk_info"
-  fi
-
-  send_server_status_notification "restart" "$system_info" 2>/dev/null || {
-    log_message "$LOG_FILE" "发送重启通知失败"
-  }
+# 收集系统信息作为重启详情
+system_info="系统运行时间：$uptime_info"
+if [ -n "$memory_info" ]; then
+  system_info="$system_info
+内存使用：$memory_info"
+fi
+if [ -n "$disk_info" ]; then
+  system_info="$system_info
+磁盘使用：$disk_info"
 fi
 
 log_message "$LOG_FILE" "立即重启服务器..."
@@ -108,5 +103,11 @@ fi
 
 # 如果到这里说明重启命令已成功执行
 if [ "$REBOOT_SUCCESS" = "true" ]; then
-  task_success "服务器重启" "$LOG_FILE" "重启命令已成功执行，系统即将重启"
+  # 构建详细的重启信息
+  reboot_details="重启命令已成功执行，系统即将重启
+
+重启前系统状态：
+$system_info"
+  
+  task_success "服务器重启" "$LOG_FILE" "$reboot_details"
 fi
