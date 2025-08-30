@@ -36,5 +36,8 @@ bash ./wpn-zip-handler.sh
 
 进入压缩包解压后的文件夹，
 ```shell
+# 输入 "Server酱" 发送密钥
+vim .env
+
 make install
 ```
