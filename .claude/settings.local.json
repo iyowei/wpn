@@ -9,7 +9,9 @@
       "Bash(mv:*)",
       "Bash(systemctl list-units:*)",
       "WebFetch(domain:wiki.ubuntu.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(make:*)",
+      "Bash(unzip:*)"
     ],
     "deny": [],
     "ask": []
