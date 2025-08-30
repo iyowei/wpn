@@ -1,5 +1,49 @@
 #!/bin/bash
 
+# WPN 项目定时任务安装脚本
+# ================================
+#
+# 功能说明：
+# - 安装 WPN 项目的三个核心定时任务：DNS 刷新、服务器重启、WireGuard 健康检查
+# - 支持安全更新：重复执行时会自动清理之前安装的任务，避免重复
+# - 使用特有标识符防止误删其他项目或用户的定时任务
+#
+# 使用方法：
+# sudo make install-cron
+# 或
+# sudo ./scripts/install-cron.sh
+#
+# 定时任务标识：
+# 本脚本创建的所有定时任务都带有 "# WPN-CRON-TASK:" 前缀标识，便于识别和管理
+#
+# 执行 crontab -l 后的输出示例：
+# ================================
+# # 用户原有任务（保持不变）
+# 0 2 * * * /usr/local/bin/backup.sh
+#
+# # WPN-CRON-TASK: DNS 刷新任务
+# 0 6 * * * TZ='Asia/Shanghai' /home/ubuntu/wpn/scripts/dns-refresh.sh
+#
+# # WPN-CRON-TASK: 服务器重启任务
+# 5 6 * * * TZ='Asia/Shanghai' /home/ubuntu/wpn/scripts/server-reboot.sh
+#
+# # WPN-CRON-TASK: WireGuard 健康检查任务
+# 1 * * * * TZ='Asia/Shanghai' /home/ubuntu/wpn/scripts/wireguard-healthcheck.sh
+#
+# # 用户其他任务（保持不变）
+# 0 8 * * 1 /home/user/weekly-report.sh
+#
+# 安全特性：
+# - 只删除带有 WPN-CRON-TASK 标识的任务
+# - 完全保留用户和其他项目的定时任务
+# - 自动备份 crontab，失败时可恢复
+# - 记录安装状态到 /etc/wpn-cron-tasks.txt
+#
+# 时间设置：
+# - DNS 刷新：每天早上 6:00（上海时间）
+# - 服务器重启：每天早上 6:05（上海时间）
+# - 健康检查：每小时第 1 分钟（上海时间）
+
 if [ "$EUID" -ne 0 ]; then
   echo "错误：此脚本需要 root 权限运行"
   echo "请使用：sudo $0"
@@ -10,6 +54,67 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DNS_SCRIPT="$SCRIPT_DIR/dns-refresh.sh"
 REBOOT_SCRIPT="$SCRIPT_DIR/server-reboot.sh"
 HEALTHCHECK_SCRIPT="$SCRIPT_DIR/wireguard-healthcheck.sh"
+
+# 持久存储定时任务记录的文件
+CRON_RECORD_FILE="/etc/wpn-cron-tasks.txt"
+
+# WPN 项目定时任务标识符
+WPN_CRON_TAG="# WPN-CRON-TASK"
+
+# 清理之前安装的定时任务
+cleanup_previous_cron_tasks() {
+  echo "正在清理之前安装的 WPN 项目定时任务..."
+
+  # 备份当前 crontab
+  local temp_crontab
+  temp_crontab="/tmp/crontab_temp_$(date +%Y%m%d_%H%M%S)"
+  crontab -l > "$temp_crontab" 2>/dev/null || touch "$temp_crontab"
+
+  # 检查是否有 WPN 项目的定时任务
+  if grep -q "$WPN_CRON_TAG" "$temp_crontab" 2>/dev/null; then
+    echo "发现之前安装的 WPN 项目定时任务，正在删除..."
+
+    # 删除所有带有 WPN_CRON_TAG 标识的行和其后面的实际任务行
+    # 使用 awk 来处理，删除标识行和紧跟的非注释行
+    awk "
+      BEGIN { delete_next = 0 }
+      /^$WPN_CRON_TAG/ { delete_next = 1; next }
+      delete_next == 1 && /^[^#]/ { delete_next = 0; next }
+      delete_next == 1 && /^#/ { delete_next = 0; print; next }
+      { print }
+    " "$temp_crontab" > "${temp_crontab}.new"
+
+    mv "${temp_crontab}.new" "$temp_crontab"
+
+    # 应用清理后的 crontab
+    crontab "$temp_crontab" || {
+      echo "警告: 无法更新 crontab，但将继续安装新任务"
+    }
+
+    echo "WPN 项目定时任务清理完成"
+  else
+    echo "未发现之前安装的 WPN 项目定时任务"
+  fi
+
+  # 清理临时文件
+  rm -f "$temp_crontab"
+}
+
+# 保存当前安装的定时任务到记录文件（用于记录安装状态）
+save_cron_tasks_record() {
+  echo "保存定时任务安装记录到 $CRON_RECORD_FILE"
+  {
+    echo "# WPN 项目定时任务安装记录"
+    echo "# 安装时间: $(date)"
+    echo "# 任务列表:"
+    echo "DNS_SCRIPT=$DNS_SCRIPT"
+    echo "REBOOT_SCRIPT=$REBOOT_SCRIPT"
+    echo "HEALTHCHECK_SCRIPT=$HEALTHCHECK_SCRIPT"
+    echo "CRON_TAG=$WPN_CRON_TAG"
+  } > "$CRON_RECORD_FILE" || {
+    echo "警告: 无法保存定时任务记录"
+  }
+}
 
 # 检查必要脚本是否存在
 if [ ! -f "$DNS_SCRIPT" ]; then
@@ -71,13 +176,27 @@ echo "  - 每天上海时间早上 6:00 执行 DNS 刷新"
 echo "  - 每天上海时间早上 6:05 执行服务器重启"
 echo "  - 每小时的第 1 分钟执行 WireGuard 健康检查"
 
+# 清理之前安装的定时任务
+cleanup_previous_cron_tasks
+
 # 备份现有的 crontab
 CRONTAB_BACKUP="/tmp/crontab_backup_$(date +%Y%m%d_%H%M%S)"
 crontab -l > "$CRONTAB_BACKUP" 2>/dev/null || touch "$CRONTAB_BACKUP"
 echo "已备份现有 crontab 到 $CRONTAB_BACKUP"
 
 # 添加新的定时任务
-(crontab -l 2>/dev/null | grep -v "$DNS_SCRIPT" | grep -v "$REBOOT_SCRIPT" | grep -v "$HEALTHCHECK_SCRIPT"; echo "0 6 * * * TZ='Asia/Shanghai' $DNS_SCRIPT"; echo "5 6 * * * TZ='Asia/Shanghai' $REBOOT_SCRIPT"; echo "1 * * * * TZ='Asia/Shanghai' $HEALTHCHECK_SCRIPT") | crontab - || {
+(
+  crontab -l 2>/dev/null
+  echo ""
+  echo "$WPN_CRON_TAG: DNS 刷新任务"
+  echo "0 6 * * * TZ='Asia/Shanghai' $DNS_SCRIPT"
+  echo ""
+  echo "$WPN_CRON_TAG: 服务器重启任务"
+  echo "5 6 * * * TZ='Asia/Shanghai' $REBOOT_SCRIPT"
+  echo ""
+  echo "$WPN_CRON_TAG: WireGuard 健康检查任务"
+  echo "1 * * * * TZ='Asia/Shanghai' $HEALTHCHECK_SCRIPT"
+) | crontab - || {
   echo "错误：无法更新 crontab，正在恢复备份..."
   crontab "$CRONTAB_BACKUP" 2>/dev/null
   exit 1
@@ -86,6 +205,10 @@ echo "已备份现有 crontab 到 $CRONTAB_BACKUP"
 # 验证 crontab 是否正确添加
 if crontab -l | grep -q "$DNS_SCRIPT" && crontab -l | grep -q "$REBOOT_SCRIPT" && crontab -l | grep -q "$HEALTHCHECK_SCRIPT"; then
   echo "定时任务添加成功！"
+
+  # 保存定时任务记录
+  save_cron_tasks_record
+
   echo "当前 crontab 配置："
   crontab -l | grep -E "($DNS_SCRIPT|$REBOOT_SCRIPT|$HEALTHCHECK_SCRIPT)" || {
     echo "警告：无法显示 crontab 配置"
@@ -172,5 +295,9 @@ else
   crontab "$CRONTAB_BACKUP" 2>/dev/null || {
     echo "警告：无法恢复原有 crontab 配置"
   }
+
+  # 清理可能生成的记录文件
+  rm -f "$CRON_RECORD_FILE" 2>/dev/null
+
   exit 1
 fi
