@@ -213,10 +213,21 @@ fi
 log_message "$LOG_FILE" "开始安全检查..."
 
 # SSH 服务检查
-if systemctl is-active ssh >/dev/null 2>&1 || systemctl is-active sshd >/dev/null 2>&1; then
-  add_check_result "SSH 服务" "SUCCESS" "运行正常"
+# Ubuntu 22.10+ 使用 socket-based activation，需要检查 ssh.socket 而不是 ssh.service
+# socket 激活模式下，ssh.service 只在有连接时才启动，平时处于 inactive 状态
+if systemctl is-active ssh.socket >/dev/null 2>&1; then
+  add_check_result "SSH 服务" "SUCCESS" "Socket 激活模式运行正常"
+elif systemctl is-active ssh >/dev/null 2>&1; then
+  add_check_result "SSH 服务" "SUCCESS" "传统服务模式运行正常"
+elif systemctl is-active sshd >/dev/null 2>&1; then
+  add_check_result "SSH 服务" "SUCCESS" "运行正常 (通过 sshd 别名)"
 else
-  add_check_result "SSH 服务" "ERROR" "未运行"
+  # 检查 ssh.socket 是否至少是 enabled 状态
+  if systemctl is-enabled ssh.socket >/dev/null 2>&1; then
+    add_check_result "SSH 服务" "WARNING" "Socket 已启用但当前未激活，等待连接触发"
+  else
+    add_check_result "SSH 服务" "ERROR" "服务和 Socket 都未运行"
+  fi
 fi
 
 # fail2ban 检查
