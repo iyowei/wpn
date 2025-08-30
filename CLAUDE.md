@@ -73,10 +73,9 @@ echo "$ret"
 压缩包结构，
 ```
 - wpn-20250830-143022.zip
-  - wpn-20250830-143022/（与压缩包同名）
-    - Makefile（移除了 pack 指令）
-    - scripts/
-    - etc/
+  - Makefile（移除了 pack 指令）
+  - scripts/
+  - etc/
 ```
 
 压缩包仅包含上述结构所示文件、文件夹。

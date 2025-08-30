@@ -249,19 +249,18 @@ pack:
 	@PROJECT_NAME="wpn-$$(date +%Y%m%d-%H%M%S)"; \
 	ZIP_FILE="$$PROJECT_NAME.zip"; \
 	TEMP_DIR="/tmp/$$PROJECT_NAME-pack"; \
-	WPN_DIR="$$TEMP_DIR/$$PROJECT_NAME"; \
 	echo "创建压缩包: $$ZIP_FILE"; \
 	echo "创建临时目录: $$TEMP_DIR"; \
-	mkdir -p "$$WPN_DIR" || { echo "错误: 无法创建临时目录"; exit 1; }; \
+	mkdir -p "$$TEMP_DIR" || { echo "错误: 无法创建临时目录"; exit 1; }; \
 	echo "复制项目核心文件到临时目录..."; \
-	cp -r scripts "$$WPN_DIR/" && \
-	cp -r etc "$$WPN_DIR/" || { \
+	cp -r scripts "$$TEMP_DIR/" && \
+	cp -r etc "$$TEMP_DIR/" || { \
 		echo "错误: 复制项目核心文件失败"; \
 		rm -rf "$$TEMP_DIR"; \
 		exit 1; \
 	}; \
 	echo "创建压缩包专用 Makefile（移除 pack 指令）..."; \
-	sed -e '/^# 打包项目$$/,/^$$/d' -e 's/backup restore update test security-setup pack/backup restore update test security-setup/' Makefile > "$$WPN_DIR/Makefile" || { \
+	sed -e '/^# 打包项目$$/,/^$$/d' -e 's/backup restore update test security-setup pack/backup restore update test security-setup/' Makefile > "$$TEMP_DIR/Makefile" || { \
 		echo "错误: 创建压缩包专用 Makefile 失败"; \
 		rm -rf "$$TEMP_DIR"; \
 		exit 1; \
