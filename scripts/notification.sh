@@ -64,14 +64,14 @@ main() {
     exit 1
   fi
 
-  log_info "开始为任务 “${task_name}” 发送通知..."
+  log_info "开始为任务「${task_name}」发送通知..."
 
   # 查找指定任务的最新日志文件
   local latest_log_file
   latest_log_file=$(find "$log_dir" -name "${task_name}-*.log" -type f -print0 | xargs -0 ls -t | head -n 1)
 
   if [ -z "$latest_log_file" ] || [ ! -f "$latest_log_file" ]; then
-    local error_msg="找不到任务 “${task_name}” 的日志文件。"
+    local error_msg="找不到任务「${task_name}」的日志文件。"
     log_error "$error_msg"
     sc_send "$title" "$error_msg" "$key"
     exit 1
