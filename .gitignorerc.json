@@ -12,5 +12,20 @@
     "TortoiseGit"
   ],
 
-  "custom": ["*.zip"]
+  "custom": [
+    "*.diff",
+    "*.zip",
+    "*.tar",
+    "*.tar.gz",
+    "*.tar.bz2",
+    "*.tar.xz",
+    "*.rar",
+    "*.7z",
+    "*.modified",
+    "*.deleted",
+    "CLAUDE.local.md",
+    ".antigravitycli",
+    ".trae",
+    ".codebuddy"
+  ]
 }

@@ -232,6 +232,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Claude Code 本地私有覆盖（不提交到仓库）
+CLAUDE.local.md
+
 
 
 # Cache files for Sublime Text
@@ -366,4 +369,22 @@ Temporary Items
 
 
 
+*.diff
+
+# 压缩包
 *.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.rar
+*.7z
+
+*.modified
+*.deleted
+
+# Antigravity CLI
+.antigravitycli
+
+.trae
+.codebuddy
