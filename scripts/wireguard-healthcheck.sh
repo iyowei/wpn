@@ -14,8 +14,8 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 # 引入日志记录器
 source "${SCRIPT_DIR}/logger.sh"
 
-# 引入通知脚本
-source "${SCRIPT_DIR}/notification.sh"
+# 引入通知脚本 (已注释，避免由于 source 导致子脚本的 main 函数被提前意外触发)
+# source "${SCRIPT_DIR}/notification.sh"
 
 #
 # 主函数
