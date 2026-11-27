@@ -1,10 +1,12 @@
 在 Claude Code 对话中使用中文交流。
 
-这个项目专注于沉淀 WireGuard VPN 组网解决方案，基于 Ubuntu 24 LTS 操作系统。
+这个项目专注于沉淀 WireGuard VPN 组网解决方案。
 
 查看 @README.md 了解当前项目。
-查看 @SERVER.md 了解初始化一台 WireGuard 服务器细节。
+查看 @SERVER.md 了解网关的 WireGuard 与 nginx 装配细节。
 查看 @PEER.md 了解 WireGuard 端节点细节。
+
+新增容器、调整内存或 CPU 限制、排查 OOM 前, 先读 server-forge 项目的 `docs/container-resource-baseline.md`, 按其中的定值算法与基线表执行。
 
 ## 脚本
 
@@ -66,16 +68,10 @@ ret=$(sc_send '主人服务器宕机了 via shell' $'第一行\n\n第二行' "$S
 echo "$ret"
 ```
 
-@scripts/install-cron.sh 脚本每次执行时，要把老的定时任务移除，每次当前脚本设置定时任务，还是要持久存储一下，方便下一次设置最新定时任务时把之前的移除掉。
+@opt/wpn/scripts/install-cron.sh 脚本每次执行时，要把老的定时任务移除，每次当前脚本设置定时任务，还是要持久存储一下，方便下一次设置最新定时任务时把之前的移除掉。
 
 `crontab -l` 参考格式，
 ```
-# WPN-CRON-TASK: DNS 刷新任务 (每日 06:00)
-0 6 * * * TZ='Asia/Shanghai' /root/wpn-20250830-190657/scripts/dns-refresh.sh
-
-# WPN-CRON-TASK: 服务器重启任务 (每日 06:05)
-5 6 * * * TZ='Asia/Shanghai' /root/wpn-20250830-190657/scripts/server-reboot.sh
-
 # WPN-CRON-TASK: WireGuard 健康检查任务 (每小时的 9-59 分钟)
 9-59 * * * * TZ='Asia/Shanghai' /root/wpn-20250830-190657/scripts/wireguard-healthcheck.sh
 ```
@@ -90,16 +86,18 @@ echo "$ret"
 ```
 - wpn-20250830-143022.zip
   - Makefile（移除了 pack 指令）
-  - scripts/
+  - scripts/          （来自 opt/wpn/scripts）
   - etc/
 ```
+
+仓库根的 `scripts/` 与压缩包内的 `scripts/` 不是一回事: 前者是开发辅助工具 (压缩包处理器), 后者是部署到目标机的运行时脚本。
 
 压缩包仅包含上述结构所示文件、文件夹。
 
 ## 终端、轮转、推送消息机制
 
-@wpn-zip-handler.sh
-@scripts/install-cron.sh
+@scripts/wpn-zip-handler.sh
+@opt/wpn/scripts/install-cron.sh
 这两份脚本只需要充分、详细的终端日志即可。
 
 定时任务也需要详细的终端日志，尤其是 WireGuard 服务健康检查这样的任务，每一处检查都应该有详细的日志，同时将终端日志同步到日志文件中去。
