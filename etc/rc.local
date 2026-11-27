@@ -1,0 +1,6 @@
+#!/bin/bash
+# 网关隧道路由与 MSS 钳制自启动脚本
+# 确保发往 WireGuard 客户端子网的数据包严格遵循 1420 MTU 与 1380 advmss，根除大包分片
+sleep 10
+ip route add 10.8.0.0/24 via 10.42.42.42 mtu 1420 advmss 1380 2>/dev/null || ip route change 10.8.0.0/24 via 10.42.42.42 mtu 1420 advmss 1380
+exit 0
