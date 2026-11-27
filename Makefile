@@ -68,10 +68,10 @@ install-wireguard: check-root
 # 安装定时任务
 install-cron: check-root
 	@echo "安装 WireGuard 健康检查定时任务..."
-	@if [ -f scripts/install-cron.sh ]; then \
-		cd scripts && ./install-cron.sh; \
+	@if [ -f opt/wpn/scripts/install-cron.sh ]; then \
+		cd opt/wpn/scripts && ./install-cron.sh; \
 	else \
-		echo "错误: scripts/install-cron.sh 未找到"; \
+		echo "错误: opt/wpn/scripts/install-cron.sh 未找到"; \
 		exit 1; \
 	fi
 	@echo "定时任务安装完成"
@@ -163,8 +163,8 @@ test:
 	fi
 	@echo ""
 	@echo "=== 检查定时任务脚本 ==="
-	@if [ -f scripts/test-healthcheck.sh ]; then \
-		cd scripts && ./test-healthcheck.sh; \
+	@if [ -f opt/wpn/scripts/test-healthcheck.sh ]; then \
+		cd opt/wpn/scripts && ./test-healthcheck.sh; \
 	else \
 		echo "测试脚本未找到"; \
 	fi
@@ -185,7 +185,7 @@ pack:
 	echo "创建临时目录: $$TEMP_DIR"; \
 	mkdir -p "$$TEMP_DIR" || { echo "错误: 无法创建临时目录"; exit 1; }; \
 	echo "复制项目核心文件到临时目录..."; \
-	cp -r scripts "$$TEMP_DIR/" && \
+	cp -r opt/wpn/scripts "$$TEMP_DIR/" && \
 	cp -r etc "$$TEMP_DIR/" || { \
 		echo "错误: 复制项目核心文件失败"; \
 		rm -rf "$$TEMP_DIR"; \
@@ -198,14 +198,10 @@ pack:
 		exit 1; \
 	}; \
 	echo "创建压缩包..."; \
-	echo "检查临时目录结构:"; \
-	find "$$TEMP_DIR" -type f | head -10; \
 	cd "$$TEMP_DIR" && zip -r "$(PWD)/$$ZIP_FILE" . \
-		-x "*.git*" "*.DS_Store" "*.log" "*~" "*.tmp" "*.zip" "*.tar.gz" "*.tar.bz2" "*.tar.xz" "*.rar" "*.7z" \
+		-x "*.git*" "*.DS_Store" "*.log" "*~" "*.tmp" "*.zip" "*.tar.gz" \
 		2>/dev/null || { \
 			echo "错误: zip 命令失败，请安装 zip 工具"; \
-			echo "Ubuntu/Debian: sudo apt install zip"; \
-			echo "macOS: brew install zip"; \
 			cd "$(PWD)"; \
 			rm -rf "$$TEMP_DIR"; \
 			exit 1; \
@@ -213,7 +209,4 @@ pack:
 	cd "$(PWD)"; \
 	rm -rf "$$TEMP_DIR"; \
 	echo "打包完成: $$ZIP_FILE"; \
-	echo "压缩包内容结构:"; \
-	unzip -l "$$ZIP_FILE" | head -20; \
-	echo "..."; \
-	ls -lh "$$ZIP_FILE"
+	unzip -l "$$ZIP_FILE" | head -20
