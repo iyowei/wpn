@@ -3,8 +3,8 @@
 #
 # 主机底座 (Docker、fail2ban、内核调优、主机级定时任务) 归 server-forge 项目
 
-.PHONY: help install install-wireguard install-cron \
-	start-wireguard stop-wireguard status logs clean \
+.PHONY: help install install-wireguard install-cron firewall-setup \
+	start-wireguard stop-wireguard restart-wireguard status logs clean \
 	backup restore update test pack
 
 # 默认目标
@@ -15,6 +15,7 @@ help:
 	@echo "  install            - 安装 WireGuard 与定时任务"
 	@echo "  install-wireguard  - 仅安装 WireGuard (wg-easy)"
 	@echo "  install-cron       - 仅安装 WireGuard 健康检查定时任务"
+	@echo "  firewall-setup     - 应用边缘节点防火墙基线 (UFW)"
 	@echo ""
 	@echo "  start-wireguard    - 启动 WireGuard 服务"
 	@echo "  stop-wireguard     - 停止 WireGuard 服务"
@@ -75,6 +76,16 @@ install-cron: check-root
 		exit 1; \
 	fi
 	@echo "定时任务安装完成"
+
+# 应用边缘节点防火墙基线
+firewall-setup: check-root
+	@echo "应用边缘节点防火墙基线..."
+	@if [ -f opt/wpn/scripts/firewall-rrpi.sh ]; then \
+		cd opt/wpn/scripts && ./firewall-rrpi.sh; \
+	else \
+		echo "错误: opt/wpn/scripts/firewall-rrpi.sh 未找到"; \
+		exit 1; \
+	fi
 
 # 启动 WireGuard 服务
 start-wireguard:
