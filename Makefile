@@ -203,7 +203,7 @@ pack:
 		exit 1; \
 	}; \
 	echo "创建压缩包专用 Makefile（移除 pack 指令）..."; \
-	sed -e '/^# 打包项目$$/,/^$$/d' -e 's/backup restore update test clean pack/backup restore update test clean/' Makefile > "$$TEMP_DIR/Makefile" || { \
+	sed -e '/^# 打包项目$$/,/^$$/d' -e 's/backup restore update test pack/backup restore update test/' -e '/^[[:space:]]*@echo "  pack/d' -e 's/ (pack 命令除外)//' Makefile > "$$TEMP_DIR/Makefile" || { \
 		echo "错误: 创建压缩包专用 Makefile 失败"; \
 		rm -rf "$$TEMP_DIR"; \
 		exit 1; \
